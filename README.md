@@ -1,4 +1,4 @@
-# Controller READ.ME
+# Controller
 
 The Controller script is part of the Air Factories 2.0 project, it should be used with the pi camera in order to interact with the Ethereum SmartContract, IPFS and Hyperledger  for storing information about a print process.
 
