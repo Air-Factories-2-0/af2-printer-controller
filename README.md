@@ -89,7 +89,7 @@ sudo raspi-config
 
 You should see a screen like the following, and you have to select "Interface Options"
 
-![](/Users/antoniopipitone/Desktop/Schermata%202022-01-18%20alle%2015.58.23.png)
+![](https://github.com/AntonioPipitone/af2-printer-controller/blob/master/Img/1.png)
 
 At this point you will see the following screen, select "Legacy Camera" and enable it:
 
