@@ -93,9 +93,9 @@ You should see a screen like the following, and you have to select "Interface Op
 
 At this point you will see the following screen, select "Legacy Camera" and enable it:
 
-![](/Users/antoniopipitone/Desktop/Schermata%202022-01-18%20alle%2015.58.32.png)
+![](https://github.com/AntonioPipitone/af2-printer-controller/blob/master/Img/2.png)
 
-<img title="" src="file:///Users/antoniopipitone/Desktop/Schermata%202022-01-18%20alle%2015.58.41.png" alt="" width="372" data-align="center">
+<img title="" src="https://github.com/AntonioPipitone/af2-printer-controller/blob/master/Img/3.png" alt="" width="372" data-align="center">
 
 
 
@@ -188,7 +188,7 @@ Go to the User Interface of OctoPrint, it should be in `http://localhost:5000/`.
 
 In this page go to settings:
 
-![](/Users/antoniopipitone/Desktop/Schermata%202022-01-18%20alle%2016.51.01.png)
+![](https://github.com/AntonioPipitone/af2-printer-controller/blob/master/Img/4.png)
 
 First click on Webcam & Timelapse (1) and set Stream URL(2) to your webcam server address specify the action `stream`
 
@@ -197,7 +197,7 @@ First click on Webcam & Timelapse (1) and set Stream URL(2) to your webcam serve
 http://192.168.1.171:8090/?action=stream
 ```
 
-![](/Users/antoniopipitone/Desktop/Schermata%202022-01-18%20alle%2017.25.35.png)
+![](https://github.com/AntonioPipitone/af2-printer-controller/blob/master/Img/5.png)
 
 Clicking on Test you should see a live video of your webcam.
 
@@ -213,7 +213,7 @@ Clicking on Test you should see a live video of your webcam.
 
 Go to the setting panel of OctoPrint and click on Plugin Manager, search for CuraEngine Legacy (1.1.2) and install the plugin.
 
-![](/Users/antoniopipitone/Desktop/Schermata%202022-01-18%20alle%2017.43.06.png)
+![](https://github.com/AntonioPipitone/af2-printer-controller/blob/master/Img/6.png)
 
 Now you can add .STL File on OctoPrint and make a slicing. 
 But you have to load your slicing profile.
@@ -283,11 +283,11 @@ To create an API KEY go to the User Interface of OctoPrint and open the Setting 
 
 Then click on Application Keys
 
-![](/Users/antoniopipitone/Desktop/Schermata%202022-01-18%20alle%2016.51.59.png)
+![](https://github.com/AntonioPipitone/af2-printer-controller/blob/master/Img/7.png)
 
 To create a new API Key select an user, give an Application Identifier and click on Generate
 
-![](/Users/antoniopipitone/Desktop/Schermata%202022-01-18%20alle%2016.52.47.png)
+![](https://github.com/AntonioPipitone/af2-printer-controller/blob/master/Img/8.png)
 
 Now go into the ServerController script and use the generated API KEY as the argument `api` in the OctoPrint constructor.
 
