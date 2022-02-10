@@ -2,7 +2,7 @@ from flask import Flask, request, jsonify
 from IPFS import IPFS
 
 ipfs = IPFS()
-ipfs.connect("/ip4/192.168.1.171/tcp/5001")
+ipfs.connect("/ip4/192.168.1.170/tcp/5001")
 app = Flask(__name__)
 
 
@@ -12,7 +12,7 @@ def test():
     hash_img = body.get("hash",None) if body else None
 
     if hash_img:
-        ipfs.download(hash=hash_img, ext=".jpg")
+        ipfs.download(hash=hash_img, ext=".png")
         print(hash_img)
         return jsonify(
             {
