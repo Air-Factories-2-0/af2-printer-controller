@@ -21,14 +21,28 @@
 
 import requests
 import json
+
+body = {
+    "orderID":"",
+    "printer":"",     #!Printer Address
+    "design":"",      #!hashDesign 1
+    "gcode":"",       #!Carica gcode su IPFS 2
+    "snapshot":"",    #!Carica snapshot su IPFS
+    "piece":0,        #!Numero del pezzo
+    "player":"" ,      #!Address player  
+    "layer":""  
+}
+
 class Hyperledger:
 
-    address="http://192.168.1.53:10000/"
     
-    def __init__(self, address = address):
+    def __init__(self, address):
         self.__address = address
+        self.__post_api = "/asset"
 
-    def send_hash(self, hash):
-        r = requests.post(self.__address, json = {"hash":hash})
+    def send_hash(self, data):
+        if data == None: raise Exception
+        r = requests.post(self.__address+self.__post_api, json =data)
         r = json.loads(r.content.decode("utf-8"))
         return r
+

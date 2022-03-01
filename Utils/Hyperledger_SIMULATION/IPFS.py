@@ -21,8 +21,9 @@ import ipfshttpclient, os, glob
 
 
 class IPFS: 
+    address = "/ip4/192.168.1.54/tcp/5001"
 
-    def __init__(self, address):
+    def __init__(self, address = address):
         self.__stl_dir = "STL_Download"
         self.__img_dir = "Image_Download"
         self.__address = address
@@ -58,13 +59,13 @@ class IPFS:
         @return return the path in which the file is saved
         '''
         self.__connection.get(hash, self.__stl_dir)
-        path=str(os.path.abspath(self.__stl_dir+"/"+hash))
+        path = str(os.path.abspath(f'{self.__stl_dir}/{hash}'))
         newName = path+ext
         os.rename(path, newName)
         return path
    
     def deleteDownloaded(self,name):
-        os.remove(self.__stl_dir+"/"+name+".stl")
+        os.remove(f'{self.__stl_dir}/{name}.stl')
         
     def get_stl_dir(self):
         return self.__stl_dir

@@ -20,16 +20,24 @@
 
 from Octoprint.OctoPrint import Octoprint
 from IPFS.IPFS import IPFS
-from Hyperledger.Hyperledger import Hyperledger
+from Hyperledger.Hyperledger import Hyperledger, body
+from Ethereum.SmartContract import Contract
 
 import time, glob, os, json
 
+class PrintInfo:
+    def __init__(self):
+        pass
 
 class Controller:
-    def __init__(self,Octoprint,IPFS, Hyperledger):
+    def __init__(self,Octoprint,IPFS, Hyperledger, Contract_AF2):
         self.__octo = Octoprint
         self.__ipfs = IPFS
         self.__hyper = Hyperledger
+        self.__contract = Contract_AF2
+        self._body = None
+        self._wait = 5
+        self._percentage = 5
 
     #! Getter
     def getOcto(self):
@@ -40,83 +48,171 @@ class Controller:
     
     def getHyper(self):
         return self.__hyper
+    #!-----------------------
+
     
-    def slice(self, hash):
+    def sliceSTL(self, hash):
+        #!Download The STL from IPFS
         path=self.__ipfs.download(hash,".stl")
         name= path[::-1].split("/")[0][::-1] 
+
+        #!Upload the STL into Octoprint
         self.__octo.upload_STL(path+".stl")
+
+        #!Create the GCODE from the STL
         self.__octo.slice_STL(name+".stl")
+
+        #!Wait untile the GCODE is Created
+        if not self.waitSlicing(1, name+".gco"): return False      #! Wait max 1 minute: return False
+        
+        #!Upload the GCODE on IPFS        
+        self._body["gcode"] = self.__ipfs.upload(self.__octo.get_GCO_path(name+".gco"))
         return name
+
 
     def waitSlicing(self, n_minute, gconame): #! Wait the slicing for n minute
         maxTries = n_minute * 60
         while(True): 
             try:
+                print("Waiting for File")
                 data = self.__octo.isSliced(gconame)
-                if data: break
-                time.sleep(1)
+                if data: return data
+                time.sleep(self._wait)
             except:
                 maxTries-=1
                 if maxTries == 0:
                     break
-                print("File not Found")
-                time.sleep(1)
+                time.sleep(self._wait)
+        print("File Not Found")
 
-    def printFail(self):
-        self.__octo.stop_print()
 
-    def deleteDownloaded(self, name):
+
+    def printFail(self,name):
+        print("ERRORE")
+        self.endPrinting(1)
+        self.__octo.set_printing_order(False)
+        self.__octo.set_wait_resume(False)
+
+
+
+    def clean(self, name):
         self.__ipfs.deleteDownloaded(name)
+        self.__octo.cancel()
         self.__octo.delete_model(name)
+        self._body = body 
+
+
+    def startPrinting(self):
+        try:
+            self.__contract.startTransaction(self.__contract.startPrinting(self._body["orderID"], self._body["design"], self._body["piece"]))
+        except:
+            pass
+
+    def endPrinting(self,status):
+        self.__contract.startTransaction(self.__contract.endPrinting(self._body["orderID"], self._body["piece"], status))
+
 
     def dataCollecting(self, name):
         try:
             print("Start collecting")
-            files_sended = {}
+            currentLayer=0
+            totalLayer=0
+            step = 0
+            checked = set()
             while(self.__octo.isPrinting()):
-                print("Searching data")
-                path = self.__octo.get_tmp_folder()+name+"*"
-                files = glob.glob(path)
+                time.sleep(self._wait)
+                layer_info = self.__octo.get_layer_info()
+                currentLayer = layer_info["current"]
+                totalLayer = layer_info["total"]
+                if currentLayer =="-" or totalLayer== "-":
+                    time.sleep(self._wait)
+                    print("waiting for layer info")
+                    continue
 
-                for file in files:
-                    if files_sended.get(file,None)==None:
-                        hash_img = files_sended[file]=self.__ipfs.upload(file)
+                if step == 0:
+                    step = (int(totalLayer) * self._percentage)//100
+                    print("Step: ",step)
+                else:
+                    print("check layer: ", currentLayer, "-", int(currentLayer)%step)
+                    if(int(currentLayer)%step==0 and int(currentLayer) not in checked):
+                        print("Layer: ", currentLayer)
+                        checked.add(int(currentLayer))
+                        print("pausing")
+                        self.__octo.stop_and_home()
+                        time.sleep(self._wait)
+                        #!Wait until paused
+                        while(not self.__octo.getStatus()["paused"]):
+                            time.sleep(self._wait)
+            
+                        #!Take a pic
+                        file = self.__octo.takeSnap()
+                        self._body["snapshot"] = self.__ipfs.upload(file)
+                        self._body["layer"] = currentLayer
 
+                        
                         #!Send hash to hyperledger
-                        while True:
-                            check = self.__hyper.send_hash(hash_img)
-                            if check["received"] and check["hash"] == hash_img: break
-                            time.sleep(1)
+                        self.send_snap_to_Hyperledger()
 
-                        os.remove(file)         #!Remove sended image
-                time.sleep(1)
-        except Exception:
-            self.printFail()
+                        
+                        os.remove(file)
+                        print("resume")
+                        self.__octo.resume()
+                time.sleep(self._wait//2)
 
-    def start(self, hash, pieces):
-        if self.__octo.isPrinting():
-            return False
-        name = self.slice(hash)
-        gconame = name +".gco"
-        self.waitSlicing(1, gconame)          #! Wait max 1 minute
+            
+        except Exception as e:
+            print(e)
+            self.printFail(name)
 
-        self.__octo.delete_images(name)       #! 1. Clean folder timelapse
-        self.__octo.timelapse_start()         #! 2. Enable timelapse
-        self.__octo.print_GCO(gconame)        #! 3. Start printing
+    def send_snap_to_Hyperledger(self):
+        while True:
+            check = self.__hyper.send_hash(self._body)
+            if check["received"] and check["hash"] == self._body["snapshot"]: break
+            time.sleep(self._wait)
 
-        self.dataCollecting(name)             #! 4. Start data collection
-        self.__octo.delete_images(name)       #! 5. Eventually clean the folder timelapse
+    def start(self,orderID, hash,user, pieces):
+        self._body = body #!Fresh copy of a template body
+        self._body["orderID"] = orderID
+        self._body["design"] = hash #!Setting the desing
+        self._body["printer"] = self.__contract.public_address
+        self._body["player"] = user
+
+        self.__octo.set_printing_order(True)
+        self.__octo.set_wait_resume(False)
+
+
+        name=self.sliceSTL(hash)
+        gconame = name+".gco"
+
+        for piece in range(int(pieces)):
+
+            while(self.__octo.get_wait_resume()):
+                print("waiting resume")
+                time.sleep(self._wait)
+
+            self._body["piece"] = piece+1                 #! Piece currently printing
+            print("Printing piece: ",self._body["piece"])
+            print("Eth startPrinting")
+            self.startPrinting()                  #! 3.0 Contact the Contract to say that the printing is starting
+            
+            self.__octo.print_GCO(gconame)        #! 3.1 Start printing
+            time.sleep(self._wait*2)
+            self.dataCollecting(name)       #! 4.0 Start data collection
+
+            print("Eth endPrinting")
+            self.endPrinting(2)                    #! 4.1 Contact the Contract to say that the printing is finished
+            
+
+            print("END")
+            if(not self.__octo.get_automatic()):
+                self.__octo.set_wait_resume(True)
+
+            time.sleep(60)
         
-        self.deleteDownloaded(name)
-        print("END PRINT")
+        self.clean(name)                      #! Clean env
+        self.__octo.set_printing_order(False)
+        self.__octo.set_wait_resume(False)
 
 
-if __name__=="__main__":
-    controller = Controller(
-        Octoprint = Octoprint(),
-        IPFS = IPFS(),
-        Hyperledger = Hyperledger()
-    )
-    controller.deleteDownloaded("QmNgpqVt1NPsqMnoef8ijNBgtHDhyK9ZQiJCWCYPQDJD3T")
 
- 
+

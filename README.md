@@ -97,8 +97,6 @@ At this point you will see the following screen, select "Legacy Camera" and enab
 
 <img title="" src="https://github.com/AntonioPipitone/af2-printer-controller/blob/master/Img/3.png" alt="" width="372" data-align="center">
 
-
-
 Eventually reboot your Raspberry.
 
 ##### Check Pi Camera
@@ -263,8 +261,6 @@ Load the smart contract on the ganache blockchain by typing on the terminal wher
 
 When the smart contract is loaded on the blockchain take the address and update the smart contract address on the Controller section dedicated to web3.
 
-
-
 #### Controller Script Dependancies
 
 Install all the python dependancies that are needed in order to run the ServerController script:
@@ -272,8 +268,6 @@ Install all the python dependancies that are needed in order to run the ServerCo
 ```bash
 pip install octorest, ipfshttpclient==0.8.0a2, web3, flask, requests
 ```
-
-
 
 #### Octoprint API Key
 
@@ -347,5 +341,3 @@ Add a new printer profile in Octoprint
 Delete a printer profile in Octoprint
 
 ---
-
-
